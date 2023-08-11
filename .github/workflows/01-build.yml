@@ -1,0 +1,87 @@
+name: Build
+
+on:
+  workflow_call:
+
+jobs:
+
+  run:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Cache
+        id: cache
+        uses: actions/cache@v3
+        with:
+          path: .
+          key: ${{ runner.os }}-pCloudCC
+
+      - name: Checkout Repo
+        if: steps.cache.outputs.cache-hit != 'true'
+        uses: actions/checkout@v3
+
+      - name: Update dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: sudo apt-get update
+
+      - name: Install build dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: >
+          sudo apt-get install --yes
+          cmake
+          zlib1g-dev
+          libboost-system-dev
+          libboost-program-options-dev
+          libpthread-stubs0-dev
+          libfuse-dev
+          libudev-dev
+          fuse
+          build-essential
+          git
+
+      - name: Build pclsync
+        if: steps.cache.outputs.cache-hit != 'true'
+        working-directory: pCloudCC/lib/pclsync
+        run: |
+          make clean
+          make fs
+
+      - name: Build mbedtls
+        if: steps.cache.outputs.cache-hit != 'true'
+        working-directory: pCloudCC/lib/mbedtls
+        run: |
+          cmake .
+          make clean
+          make
+
+      - name: Build pCloudCC
+        if: steps.cache.outputs.cache-hit != 'true'
+        working-directory: pCloudCC
+        run: |
+          cmake .
+          make
+          sudo make install
+          sudo ldconfig
+
+      - name: Install package dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: >
+          sudo apt-get install --yes
+          devscripts
+          debhelper
+
+      - name: Package pCloudCC
+        if: steps.cache.outputs.cache-hit != 'true'
+        working-directory: pCloudCC
+        run: sudo debuild -i -us -uc -b -d
+
+      - name: List
+        working-directory: pCloudCC
+        run: ls
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: .deb
+          path: "*.deb"

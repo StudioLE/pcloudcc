@@ -1,0 +1,37 @@
+name: Publish
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        required: true
+        type: string
+
+jobs:
+
+  run:
+    name: Publish
+    runs-on: ubuntu-latest
+    steps:
+      
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+        
+      - uses: actions/download-artifact@v3
+        with:
+          path: artifacts
+
+      - name: List artifacts
+        working-directory: /home/runner/work/pcloudcc/pcloudcc/artifacts/.deb
+        run: ls
+
+      - name: Upload Release Asset
+        working-directory: /home/runner/work/pcloudcc/pcloudcc/artifacts/.deb
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          for ASSET in *
+          do
+            echo "Uploading ${ASSET} to v${{ inputs.version }}"
+            gh release upload "v${{ inputs.version }}" "${ASSET}"
+          done
