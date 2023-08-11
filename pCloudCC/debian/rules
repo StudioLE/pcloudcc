@@ -7,5 +7,9 @@ export DH_VERBOSE=1
 #override_dh_shlibdeps:
 #    dh_shlibdeps --dpkg-shlibdeps-params=--ignore-missing-info
 
+# Fix for dh_usrlocal: error: debian/pcloudcc/usr/local/bin/pcloudcc is not a directory
+# https://github.com/pcloudcom/console-client/issues/110#issuecomment-817505950
+override_dh_usrlocal:
+
 %:
 	dh $@ 
